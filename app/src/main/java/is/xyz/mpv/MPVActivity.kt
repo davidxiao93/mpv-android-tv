@@ -71,6 +71,8 @@ class MPVActivity : AppCompatActivity(), MPVLib.EventObserver, TouchGesturesObse
     // convenience alias
     private val player get() = binding.player
 
+    private var isPaused = true
+
     private val seekBarChangeListener = object : SeekBar.OnSeekBarChangeListener {
         override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
             if (!fromUser)
@@ -230,8 +232,6 @@ class MPVActivity : AppCompatActivity(), MPVLib.EventObserver, TouchGesturesObse
         // set up initial UI state
         syncSettings()
         onConfigurationChanged(resources.configuration)
-        if (!packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE))
-            binding.topPiPBtn.visibility = View.GONE
 
         if (showMediaTitle)
             binding.controlsTitleGroup.visibility = View.VISIBLE
@@ -661,26 +661,45 @@ class MPVActivity : AppCompatActivity(), MPVLib.EventObserver, TouchGesturesObse
     }
 
     private fun interceptDpad(ev: KeyEvent): Boolean {
-        if (btnSelected == -1) { // UP and DOWN are always grabbed and overriden
+        val playButton = 2
+        if (btnSelected == -1) { // When the player GUI is not shown
             when (ev.keyCode) {
-                KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN -> {
-                    if (ev.action == KeyEvent.ACTION_DOWN) { // activate dpad navigation
-                        btnSelected = 0
-                        updateShowBtnSelected()
+                KeyEvent.KEYCODE_DPAD_UP -> {
+                    if (ev.action == KeyEvent.ACTION_DOWN && !isPaused) {
+                        player.nextChapter()
                     }
                     return true
+                }
+                KeyEvent.KEYCODE_DPAD_DOWN -> {
+                    if (ev.action == KeyEvent.ACTION_DOWN && !isPaused) {
+                        player.prevChapter()
+                    }
+                    return true
+                }
+                KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_DPAD_CENTER -> {
+                    if (ev.action == KeyEvent.ACTION_DOWN && !isPaused) {
+                        btnSelected = playButton
+                        updateShowBtnSelected()
+                    }
+                    // Let the other handlers also deal with this button
+                    return false
                 }
             }
             return false
         }
-        // only used when dpad navigation is active
+        // When Player GUI is shown
         val group1 = binding.controlsButtonGroup
         val group2 = binding.topControls
         val childCountTotal = group1.childCount + group2.childCount
         when (ev.keyCode) {
             KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN -> {
-                if (ev.action == KeyEvent.ACTION_DOWN) { // deactivate dpad navigation
-                    btnSelected = -1
+                if (ev.action == KeyEvent.ACTION_DOWN) {
+                    // Switch betwen button groups
+                    if (btnSelected < group1.childCount) {
+                        btnSelected = group1.childCount
+                    } else {
+                        btnSelected = playButton 
+                    }
                     updateShowBtnSelected()
                 }
                 return true
@@ -706,6 +725,19 @@ class MPVActivity : AppCompatActivity(), MPVLib.EventObserver, TouchGesturesObse
                         group1.getChildAt(btnSelected)?.performClick()
                     else
                         group2.getChildAt(btnSelected - childCount)?.performClick()
+                    if (btnSelected == playButton && isPaused) {
+                        // Hide the player GUI after clicking on play button to continue
+                        btnSelected = -1
+                        updateShowBtnSelected()
+                    }
+                }
+                return true
+            }
+            KeyEvent.KEYCODE_BACK -> {
+                if (ev.action == KeyEvent.ACTION_DOWN){
+                    // Hide the player GUI instead of exiting when pressing back
+                    btnSelected = -1
+                    updateShowBtnSelected()
                 }
                 return true
             }
@@ -1390,6 +1422,7 @@ class MPVActivity : AppCompatActivity(), MPVLib.EventObserver, TouchGesturesObse
     }
 
     private fun updatePlaybackStatus(paused: Boolean) {
+        isPaused = paused 
         val r = if (paused) R.drawable.ic_play_arrow_black_24dp else R.drawable.ic_pause_black_24dp
         binding.playBtn.setImageResource(r)
 
@@ -1735,7 +1768,7 @@ class MPVActivity : AppCompatActivity(), MPVLib.EventObserver, TouchGesturesObse
     companion object {
         private const val TAG = "mpv"
         // how long should controls be displayed on screen (ms)
-        private const val CONTROLS_DISPLAY_TIMEOUT = 1500L
+        private const val CONTROLS_DISPLAY_TIMEOUT = 500L
         // how long controls fade to disappear (ms)
         private const val CONTROLS_FADE_DURATION = 500L
         // size (px) of the thumbnail displayed with background play notification

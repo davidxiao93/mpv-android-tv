@@ -334,6 +334,8 @@ internal class MPVView(context: Context, attrs: AttributeSet) : SurfaceView(cont
     fun cycleAudio() = MPVLib.command(arrayOf("cycle", "audio"))
     fun cycleSub() = MPVLib.command(arrayOf("cycle", "sub"))
     fun cycleHwdec() = MPVLib.command(arrayOf("cycle-values", "hwdec", "mediacodec-copy", "no"))
+    fun nextChapter() = MPVLib.command(arrayOf("osd-bar", "add", "chapter", "1"))
+    fun prevChapter() = MPVLib.command(arrayOf("osd-bar", "add", "chapter", "-1"))
 
     fun cycleSpeed() {
         val speeds = arrayOf(0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0)

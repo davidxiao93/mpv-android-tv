@@ -1,3 +1,13 @@
+# Custom variant of mpv for Android specifically for Android TV
+
+I've modified the behaviour of the dpad buttons in the player interface to more closely match the VLC interface (as I was switching from VLC)
+Additionally, I've mapped the dpad up and down to be chapter navigation.
+
+
+
+Original README below
+
+
 # mpv for Android
 
 [![Build Status](https://api.travis-ci.com/mpv-android/mpv-android.svg?branch=master)](https://app.travis-ci.com/github/mpv-android/mpv-android)
