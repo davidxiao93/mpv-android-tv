@@ -721,10 +721,15 @@ class MPVActivity : AppCompatActivity(), MPVLib.EventObserver, TouchGesturesObse
             KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_DPAD_CENTER -> {
                 if (ev.action == KeyEvent.ACTION_DOWN) {
                     val childCount = group1.childCount
+                    var buttonView: View;
                     if (btnSelected < childCount)
-                        group1.getChildAt(btnSelected)?.performClick()
+                        buttonView = group1.getChildAt(btnSelected)
                     else
-                        group2.getChildAt(btnSelected - childCount)?.performClick()
+                        buttonView = group2.getChildAt(btnSelected - childCount)
+                    when (buttonView?.hasOnLongClickListeners()) {
+                        true -> buttonView?.performLongClick() // show the picker if there is one
+                        else -> buttonView?.performClick()
+                    }
                     if (btnSelected == playButton && isPaused) {
                         // Hide the player GUI after clicking on play button to continue
                         btnSelected = -1
@@ -884,7 +889,9 @@ class MPVActivity : AppCompatActivity(), MPVLib.EventObserver, TouchGesturesObse
     fun playlistNext(view: View) = MPVLib.command(arrayOf("playlist-next"))
 
     private fun showToast(msg: String) {
-        toast.setText(msg)
+        toast.cancel()
+        toast = Toast.makeText(this, msg, Toast.LENGTH_SHORT)
+        toast.setGravity(Gravity.TOP or Gravity.CENTER_HORIZONTAL, 0, 0)
         toast.show()
     }
 
